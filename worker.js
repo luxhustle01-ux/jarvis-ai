@@ -63,7 +63,7 @@ export default {
       return json({ error: "Endpoint not found" }, 404);
     }
 
-    if (!env.GEMINI_API_KEY) {
+    if (!env.OPENAI_API_KEY) {
       return json({ error: "AI API key is not configured" }, 500);
     }
 
@@ -79,12 +79,12 @@ export default {
       }
 
       const payload = {
-        model: "gemini-3.8-flash",
+        model: "gpt-5.5",
         input: message,
-        system_instruction: SYSTEM_INSTRUCTION,
-        generation_config: {
+        instructions: SYSTEM_INSTRUCTION,
+        
           max_output_tokens: 4096
-        }
+      
       };
 
       if (body.previousInteractionId) {
@@ -93,12 +93,12 @@ export default {
       }
 
       const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        "https://api.openai.com/v1/responses",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-goog-api-key": env.GEMINI_API_KEY
+            "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
           },
           body: JSON.stringify(payload)
         }
@@ -107,20 +107,14 @@ export default {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Gemini API error:", result);
+        console.error("OpenAI API error:", result);
 
         return json({
           error: "The AI service could not complete your request."
         }, 502);
       }
 
-      const reply = result.output_text ||
-        result.steps
-          ?.filter(step => step.type === "model_output")
-          .flatMap(step => step.content || [])
-          .filter(item => item.type === "text")
-          .map(item => item.text)
-          .join("\n");
+      const reply = result.output_text;
 
       if (!reply) {
         return json({
