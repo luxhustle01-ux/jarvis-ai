@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<meta name="theme-color" content="#070b12">
+
+<title>JARVIS AI</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;background:#070b12;color:#eaf3ff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+
+header{padding:25px 20px 15px;display:flex;justify-content:space-between;align-items:center}
+
+.brand{font-size:23px;font-weight:800;letter-spacing:4px;color:#7bdcff}
+
+.status{font-size:11px;color:#67e6b2}
+
+main{padding:12px 18px 30px;max-width:650px;margin:auto}
+
+.core{height:210px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+
+.orb{width:135px;height:135px;border-radius:50%;border:2px solid #42cfff;box-shadow:0 0 20px #168aca, inset 0 0 25px #126b9b;display:flex;align-items:center;justify-content:center;animation:pulse 3s infinite}
+
+.orb span{font-size:42px;color:#8beaff;text-shadow:0 0 20px #00bfff}
+
+@keyframes pulse{50%{box-shadow:0 0 38px #168aca,inset 0 0 35px #126b9b}}
+
+.subtitle{font-size:11px;letter-spacing:3px;color:#76cce9;margin-top:15px}
+
+.panel{background:#101a28;border:1px solid #203c55;border-radius:17px;padding:16px;margin:13px 0}
+
+.panel h3{margin:0 0 13px;font-size:14px;letter-spacing:1px;color:#85dfff}
+
+#chat{height:220px;overflow:auto;font-size:14px;line-height:1.5}
+
+.msg{padding:10px 12px;border-radius:12px;margin:8px 0;white-space:pre-wrap}
+
+.jarvis{background:#142b3d;color:#c8edff}
+
+.user{background:#173b36;color:#c9ffe9;text-align:right}
+
+.controls{display:flex;gap:8px;margin-top:12px}
+
+input{min-width:0;flex:1;background:#08121e;border:1px solid #31516b;border-radius:11px;padding:13px;color:white;font-size:15px}
+
+button{border:1px solid #287ca3;background:#10324a;color:#a8eaff;border-radius:11px;padding:12px 15px;font-size:14px}
+
+button:active{opacity:.65}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.grid button{padding:16px 8px}
+
+.item{padding:10px;border-bottom:1px solid #26394a;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+
+.small{font-size:11px;color:#8199ad}
+
+footer{text-align:center;padding:20px;color:#56748c;font-size:10px;letter-spacing:2px}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="brand">J.A.R.V.I.S</div>
+
+<div class="status">● SYSTEM ONLINE</div>
+
+</header>
+
+<main>
+
+<section class="core">
+
+<div class="orb"><span>J</span></div>
+
+<div class="subtitle">PERSONAL AI SYSTEM</div>
+
+</section>
+
+<section class="panel">
+
+<h3>CONVERSATION</h3>
+
+<div id="chat">
+
+<div class="msg jarvis">Good evening. JARVIS interface initialized. How may I assist you?</div>
+
+</div>
+
+<div class="controls">
+
+<input id="message" placeholder="Talk to JARVIS..." onkeydown="if(event.key==='Enter')send()">
+
+<button onclick="send()">SEND</button>
+
+<button onclick="listen()">🎙</button>
+
+</div>
+
+</section>
+
+<section class="panel">
+
+<h3>PERSONAL COMMAND CENTRE</h3>
+
+<div class="grid">
+
+<button onclick="showSection('memory')">🧠 MEMORY</button>
+
+<button onclick="showSection('tasks')">☑ TASKS</button>
+
+<button onclick="speak('All systems are online.')">🔊 TEST VOICE</button>
+
+<button onclick="showSection('about')">⚙ SYSTEM</button>
+
+</div>
+
+</section>
+
+<section class="panel" id="workspace">
+
+<h3 id="sectionTitle">SYSTEM INFORMATION</h3>
+
+<div id="sectionContent" class="small">
+
+Your personal workspace is ready. Use Memory to save information and Tasks to manage your list.
+
+</div>
+
+</section>
+
+<footer>JARVIS PERSONAL SYSTEM • VERSION 1.0</footer>
+
+</main>
+
+<script>
+
+const $=id=>document.getElementById(id);
+
+let memories=JSON.parse(localStorage.getItem('jarvis_memories')||'[]');
+
+let tasks=JSON.parse(localStorage.getItem('jarvis_tasks')||'[]');
+
+function save(){
+
+ localStorage.setItem('jarvis_memories',JSON.stringify(memories));
+
+ localStorage.setItem('jarvis_tasks',JSON.stringify(tasks));
+
+}
+
+function speak(text){
+
+ if(!('speechSynthesis' in window))return;
+
+ speechSynthesis.cancel();
+
+ const utterance=new SpeechSynthesisUtterance(text);
+
+ utterance.rate=0.95;
+
+ utterance.pitch=0.85;
+
+ speechSynthesis.speak(utterance);
+
+}
+
+function addMessage(text,type){
+
+ const el=document.createElement('div');
+
+ el.className='msg '+type;
+
+ el.textContent=text;
+
+ $('chat').appendChild(el);
+
+ $('chat').scrollTop=$('chat').scrollHeight;
+
+}
+
+function send(){
+
+ const input=$('message');
+
+ const text=input.value.trim();
+
+ if(!text)return;
+
+ input.value='';
+
+ addMessage(text,'user');
+
+ let answer='I am ready to help. My basic local mode is active. You can ask me to save a memory or add a task.';
+
+ const lower=text.toLowerCase();
+
+ if(lower.startsWith('remember ')){
+
+  memories.push(text.substring(9));
+
+  save();
+
+  answer='I have saved that information in your local JARVIS memory.';
+
+ }else if(lower.startsWith('task:')){
+
+  tasks.push({text:text.substring(5).trim(),done:false});
+
+  save();
+
+  answer='Task added to your command centre.';
+
+ }else if(lower.includes('how many memories')){
+
+  answer='You currently have '+memories.length+' saved memories.';
+
+ }else if(lower.includes('how many tasks')){
+
+  answer='You currently have '+tasks.filter(t=>!t.done).length+' outstanding tasks.';
+
+ }else if(lower.includes('hello')||lower.includes('hey jarvis')){
+
+  answer='Hello. All local systems are operational. What would you like to do?';
+
+ }else if(lower.includes('time')){
+
+  answer='Your iPhone local time is '+new Date().toLocaleTimeString()+'.';
+
+ }else if(lower.includes('help')){
+
+  answer='Try: Remember my favourite colour is blue. Or: Task: Buy groceries. You can also open Memory and Tasks below.';
+
+ }else if(lower.includes('memory')){
+
+  answer='You have '+memories.length+' saved memories. Open the Memory panel to review them.';
+
+ }
+
+ addMessage(answer,'jarvis');
+
+}
+
+function showSection(section){
+
+ const title=$('sectionTitle');
+
+ const content=$('sectionContent');
+
+ if(section==='memory'){
+
+  title.textContent='🧠 PERSONAL MEMORY';
+
+  content.innerHTML='';
+
+  const input=document.createElement('input');
+
+  input.placeholder='Information to remember...';
+
+  input.id='memoryInput';
+
+  const button=document.createElement('button');
+
+  button.textContent='SAVE MEMORY';
+
+  button.onclick=()=>{
+
+   if(input.value.trim()){
+
+    memories.push(input.value.trim());save();showSection('memory');
+
+   }
+
+  };
+
+  content.append(input,button);
+
+  memories.forEach((m,i)=>{
+
+   const row=document.createElement('div');row.className='item';
+
+   const span=document.createElement('span');span.textContent=m;
+
+   const del=document.createElement('button');del.textContent='×';
+
+   del.onclick=()=>{memories.splice(i,1);save();showSection('memory')};
+
+   row.append(span,del);content.append(row);
+
+  });
+
+ }else if(section==='tasks'){
+
+  title.textContent='☑ TASK MANAGER';
+
+  content.innerHTML='';
+
+  const input=document.createElement('input');
+
+  input.placeholder='New task...';
+
+  const button=document.createElement('button');
+
+  button.textContent='ADD';
+
+  button.onclick=()=>{
+
+   if(input.value.trim()){tasks.push({text:input.value.trim(),done:false});save();showSection('tasks')}
+
+  };
+
+  content.append(input,button);
+
+  tasks.forEach((t,i)=>{
+
+   const row=document.createElement('div');row.className='item';
+
+   const label=document.createElement('span');label.textContent=(t.done?'✓ ':'○ ')+t.text;
+
+   if(t.done)label.style.textDecoration='line-through';
+
+   label.onclick=()=>{tasks[i].done=!tasks[i].done;save();showSection('tasks')};
+
+   const del=document.createElement('button');del.textContent='×';
+
+   del.onclick=()=>{tasks.splice(i,1);save();showSection('tasks')};
+
+   row.append(label,del);content.append(row);
+
+  });
+
+ }else{
+
+  title.textContent='⚙ SYSTEM INFORMATION';
+
+  content.textContent='JARVIS Version 1.0 | Local storage active | No AI API connected yet | Your data stays in this browser.';
+
+ }
+
+}
+
+function listen(){
+
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+ if(!Recognition){addMessage('Voice recognition is not supported in this browser. Please use the text box.','jarvis');return}
+
+ const recognition=new Recognition();
+
+ recognition.lang='en-AU';
+
+ recognition.onresult=e=>{
+
+  $('message').value=e.results[0][0].transcript;
+
+  send();
+
+ };
+
+ recognition.onerror=()=>addMessage('Microphone unavailable. Check Safari permissions.','jarvis');
+
+ recognition.start();
+
+}
+
+</script>
+
+</body>
+
+</html>
